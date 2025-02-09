@@ -20,6 +20,7 @@
 #define I2C_SCL 15
 #define ENDERECO 0x3C
 
+#define DEBOUNCE_TIME 20 // Tempo de debounce em ms
 #define NUM_PIXELS 25
 
 #define MAX_CHARS 20        // Quantidade máxima de caracteres exibidos
@@ -184,6 +185,25 @@ void desenhar_numero(int num, PIO pio, uint sm)
     }
 }
 
+volatile bool button_a_pressionado = false;
+volatile bool button_b_pressionado = false;
+
+// Função para interrupções do botão
+void gpio_callback(uint gpio, uint32_t events) {
+    sleep_ms(DEBOUNCE_TIME);
+    if (gpio == BUTTON_A) {
+        button_a_pressionado = !button_a_pressionado;
+        gpio_put(LED_GREEN, button_a_pressionado);
+        printf("Botão A pressionado\n");
+    }
+    if (gpio == BUTTON_B) {
+        button_b_pressionado = !button_b_pressionado;
+        gpio_put(LED_BLUE, button_b_pressionado);
+        printf("Botão B pressionado\n");
+    }
+}
+
+
 // Inicialização dos pinos
 void init_pins()
 {
@@ -206,6 +226,16 @@ void init_pins()
     gpio_init(BUTTON_B);
     gpio_set_dir(BUTTON_B, GPIO_IN);
     gpio_pull_up(BUTTON_B);
+
+    gpio_init(BUTTON_A);
+    gpio_set_dir(BUTTON_A, GPIO_IN);
+    gpio_pull_up(BUTTON_A);
+    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+
+    gpio_init(BUTTON_B);
+    gpio_set_dir(BUTTON_B, GPIO_IN);
+    gpio_pull_up(BUTTON_B);
+    gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
 }
 
 // Inicializaçã
